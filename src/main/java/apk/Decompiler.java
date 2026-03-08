@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.ArrayList;
 
 import base.FileUtil;
 import base.SearchUtil;
@@ -69,8 +70,13 @@ public class Decompiler {
 			this.jarLoc = TicklerVars.dex2jarDir+"app.jar";
 			String cmd = TicklerVars.dex2jarPath + " "+ this.getApkFromTicklerDir() +" -o "+TicklerVars.jClassDir+".jar";
 			OutBut.printStep("Decompiling the app using Dex2Jar tool......");
-			command.executeProcessString(cmd);
-			
+			ArrayList<String> res = command.executeProcessString(cmd);
+			String output = res.get(0);
+			String errCode = res.get(1);
+			if (!"0".equals(errCode)) {
+				OutBut.printError("dex2jar failed with exit code " + errCode);
+				OutBut.printError(output);
+	        }
 		}
 	}
 	

@@ -43,22 +43,22 @@ public class Commando {
 	 * 		2) The error code of command execution
 	 */
 	public ArrayList<String> executeProcessString(String command){
-		int errCode=999;
+		int errCode = 999;
 		ArrayList<String> returnArr = new ArrayList();
 		List<String> args = Arrays.asList(command.split(" "));
-		String output="!!! ERROR: command "+command+" failed to execute successfully :(";
-		try{
+		String output = "!!! ERROR: command " + command + " failed to execute successfully :(";
+		try {
 			ProcessBuilder build = new ProcessBuilder(args);
+			build.redirectErrorStream(true);
 			Process p = build.start();
+			output = this.getProcessOp(p);
 			errCode = p.waitFor();
-			output= this.getProcessOp(p);
-		}
-		catch(Exception e){
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		
+
 		returnArr.add(output);
-		returnArr.add(new Integer(errCode).toString());
+		returnArr.add(Integer.toString(errCode));
 		return returnArr;
 	}
 	
