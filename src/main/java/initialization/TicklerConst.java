@@ -44,7 +44,7 @@ public class TicklerConst {
 	public static String APKTOOL_FILE_NAME="apktool.jar";
 	
 	//Tools names
-	public static String DEX2JAR_EXEC = "/dex2jar-2.1/d2j-dex2jar.sh";
+	public static String DEX2JAR_EXEC = "/dex-tools-v2.4/d2j-dex2jar.sh";
 	public static String KEY_STORE_DIR_NAME = "Keystore/Tickler.keystore";
 	
 	
