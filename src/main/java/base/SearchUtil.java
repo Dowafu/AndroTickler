@@ -262,7 +262,7 @@ public class SearchUtil {
 		//Search with regex
 		if (regex){
 			Matcher m = Pattern.compile(key).matcher(line);
-			result = m.matches();
+			result = m.find();
 		}
 		//Normal contains()
 		else
