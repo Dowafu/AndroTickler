@@ -296,6 +296,8 @@ public class JavaSqueezer {
 		this.getPathes();
 		OutBut.printH2("IP addresses in code");
 		this.getIPAddresses();
+		OutBut.printH2("UUIDs in code");
+		this.getUUID();
 	}
 	
 	public void getHttpUris(){
@@ -359,6 +361,16 @@ public class JavaSqueezer {
 			url = line.substring(m.start(0),m.end(0)-1);
 		}
 		return url;
+	}
+
+	private void getUUID() {
+		// Grep for UUID128
+		String regex = "\\b[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}\\b";
+
+		ArrayList<SimpleEntry> e = this.sU.searchForRegexInJava(regex,this.codeRoot);
+		ArrayList<SimpleEntry> results = this.removeDuplicatedSimpleEntries(e);
+		this.printE(results);
+
 	}
 	
 	//////////////////////////// Disclosure ////////////////////////////////////
