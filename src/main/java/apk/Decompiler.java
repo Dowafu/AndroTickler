@@ -69,8 +69,9 @@ public class Decompiler {
 			this.jarLoc = TicklerVars.dex2jarDir+"app.jar";
 			String cmd = TicklerVars.dex2jarPath + " "+ this.getApkFromTicklerDir() +" -o "+TicklerVars.jClassDir+".jar";
 			OutBut.printStep("Decompiling the app using Dex2Jar tool......");
-			command.executeProcessString(cmd);
-			
+			command.executeProcessString(cmd);	
+		} else {
+			OutBut.printWarning("Dex2Jar must exist and be executable");
 		}
 	}
 	
@@ -78,16 +79,10 @@ public class Decompiler {
 	private void jdCore(){
 		try{
 			OutBut.printStep("Obtaining Java code using JDCore tool. This might take some time ......");
-//			String cmd = "java -jar /home/a7mad/tools/Android/Decompile/JD-core/jd-core-1.1.3.jar "+TicklerVars.jClassDir+".jar "+TicklerVars.jClassDir;
-//			Commando command = new Commando();
-//			command.executeProcessListPrintOP(cmd,true);
-//			
-//			new jd.core.Decompiler().decompile(TicklerVars.jClassDir+".zip", TicklerVars.jClassDir);
 			new jd.core.Decompiler().decompile(TicklerVars.jClassDir+".jar", TicklerVars.jClassDir);
-
 		}
 		catch(Exception e){
-			//e.printStackTrace();
+			e.printStackTrace();
 		}
 		
 	}
