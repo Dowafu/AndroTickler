@@ -101,6 +101,25 @@ public class SearchUtil {
 	public ArrayList<SimpleEntry> searchForKeyInJava(String key){ 
 		return this.searchForKeyInJava(key, TicklerVars.jClassDir);
 	}
+
+
+	public ArrayList<SimpleEntry> searchForRegexInJava(String regex, String codeLoc){
+		
+		ArrayList<SimpleEntry> hits = new ArrayList<>();
+		List<File> files = this.search4FileInDir(codeLoc, null);
+		for (File f : files){
+			String fName = f.getAbsolutePath();
+			if (!fName.contains("com/google") && !fName.contains("android/support")){
+				ArrayList<String> results = this.findRegexInFile(f, regex);
+				for (String s:results){
+					SimpleEntry e = new SimpleEntry<String, String>(fName, s);
+					hits.add(e);
+				}
+			}
+		}
+		
+		return hits;
+	}
 	
 	/**
 	 * After searching for a key in files (which is faster), Refine the search by searching for a regex in the first search's result. 
