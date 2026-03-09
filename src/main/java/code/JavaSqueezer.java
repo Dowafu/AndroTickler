@@ -29,6 +29,7 @@ import java.util.AbstractMap;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.Comparator;
 
 //import org.apache.commons.io.FileUtils;
 
@@ -363,14 +364,27 @@ public class JavaSqueezer {
 		return url;
 	}
 
+	/*
+	* Searches for UUID128
+	* Focuses on Bluetooth related UUIDs
+	*/
 	private void getUUID() {
-		// Grep for UUID128
-		String regex = "\\b[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}\\b";
-
+		// Grep for UUID128 in String representation (with and without -)
+		String regex = "\\b(?:[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}|[0-9A-Fa-f]{32})\\b";
 		ArrayList<SimpleEntry> e = this.sU.searchForRegexInJava(regex,this.codeRoot);
 		ArrayList<SimpleEntry> results = this.removeDuplicatedSimpleEntries(e);
-		this.printE(results);
-
+		OutBut.printH3("UUID128 (String representation)");
+		this.printE_grouped(results);
+		// UUID key word
+		ArrayList<SimpleEntry> hits = new ArrayList<AbstractMap.SimpleEntry>();
+		ArrayList<String> files = new ArrayList<String>();
+		hits=this.sU.searchForKeyInJava("uuid",this.codeRoot);
+		if (!hits.isEmpty()){
+			OutBut.printH3("UUID key word");
+			this.printE_grouped(hits);
+		}
+		// I might miss Base-UUID + Short-ID format
+		// 	e.g. 0000%04x-0000-1000-8000-00805f9b34fb
 	}
 	
 	//////////////////////////// Disclosure ////////////////////////////////////
@@ -452,6 +466,25 @@ public class JavaSqueezer {
 			String fileName=e.getKey().toString().replaceAll(this.codeRoot, "[Java_Code_Dir]");
 			System.out.println("#FileName: "+fileName);
 			System.out.println(" "+e.getValue()+"\n");
+		}
+	}
+
+	/**
+	 * Print squeeze output sorted and grouped by filename to stdout
+	 * @param eArray
+	 */
+	private void printE_grouped(ArrayList<SimpleEntry> eArray) {
+		// Sort by key
+		eArray.sort(Comparator.comparing(e -> e.getKey().toString()));
+		String lastFileName = null;
+
+		for (SimpleEntry e: eArray){
+			String fileName=e.getKey().toString().replaceAll(this.codeRoot, "[Java_Code_Dir]");
+			if (!fileName.equals(lastFileName)) {
+				System.out.println("#FileName: "+fileName);
+				lastFileName = fileName;
+			}
+			System.out.println(" "+e.getValue()+"\n ...");
 		}
 	}
 	
