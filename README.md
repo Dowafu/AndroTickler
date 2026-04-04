@@ -3,7 +3,7 @@
 
 A java tool that helps to pentest Android apps faster, more easily and more efficiently. AndroTickler offers many features of information gathering, static and dynamic checks that cover most of the aspects of Android apps pentesting. It also offers several features that pentesters need during their pentests. AndroTickler also integrates with Frida to provide method tracing and manipulation. It was previously published under the name of **Tickler**.
 
-AndroTickler requires a linux host and a rooted Android device connected to its USB port. The tool does not install anything on the Android device, it only creates a *Tickler* directory on /sdcard . AndroTickler depends on Android SDK to run commands on the device and copy app's data to *TicklerWorkspace* directory on the host for further analysis. *TicklerWorkspace* is the working directory of AndroTickler and each app has a separate subdirectory in *TicklerWorkspace* which can contain the following (depending on user actions):
+AndroTickler requires a linux host and a rooted Android device connected to its USB port, do not forget to allow superuser for shell. The tool does not install anything on the Android device, it only creates a *Tickler* directory on /sdcard . AndroTickler depends on Android SDK to run commands on the device and copy app's data to *TicklerWorkspace* directory on the host for further analysis. *TicklerWorkspace* is the working directory of AndroTickler and each app has a separate subdirectory in *TicklerWorkspace* which can contain the following (depending on user actions):
 - DataDir directory: a copy of the data directory of the app
 - extracted directory: Output of apktool on the app, contains smali code, resources, libraries...etc.
 - bgSnapshots directory: Contains background snapshots copied from the device.
@@ -21,6 +21,7 @@ AndroTickler highly depends on the following tools, so they should exist on your
 - Java 7 or higher
 - Android SDK tools (adb and friends) 
 - sqlite3
+- binutils?
 
 Other tools are required for some features, but AndroTickler can still run without them:
 - Frida
@@ -62,7 +63,7 @@ Searches for an app (package) installed on the device, whose package name contai
 Any command with a -pkg option (whether used with any of the following options or not), does the following actions if they have not been done before:
 - Copies the app from the device
 - Extracts the Manifest file of the app
-- Decompiles the app to Java code using dex2jar and JD tools
+- Decompiles the app to Java code using dex2jar and JD tools (requires up to 4 GB RAM)
 
 ### General Info
 
