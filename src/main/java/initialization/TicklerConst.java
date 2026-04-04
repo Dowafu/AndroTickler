@@ -42,6 +42,8 @@ public class TicklerConst {
 	public static String EXT_DIR_OLD=DIFF_OLD_STORAGE+EXTERNAL_STORAGE_Dir;
 	public static String SQUEEZE_FILE_NAME= "squeeze.txt";
 	public static String APKTOOL_FILE_NAME="apktool.jar";
+	public static String CLUESDB_URL = "https://raw.githubusercontent.com/darkmentorllc/CLUES_Schema/refs/heads/master/CLUES_data.json";
+	public static String CLUESDB_DIR = "cluesdb";
 	
 	//Tools names
 	public static String DEX2JAR_EXEC = "/dex-tools-v2.4/d2j-dex2jar.sh";
