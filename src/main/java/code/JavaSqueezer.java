@@ -38,6 +38,8 @@ import base.FileUtil;
 import base.JsonParser;
 import base.OtherUtil;
 import base.SearchUtil;
+import base.clues.CluesCustomUUID;
+import base.clues.CluesDB;
 import cliGui.OutBut;
 import info.InfoGathering;
 import initialization.TicklerVars;
@@ -56,10 +58,17 @@ public class JavaSqueezer {
 			+ "{\"Title\":\"WebView\",\"Values\":[ \"addJavascriptInterface\", \"setAllowContentAccess\", \"setAllowFileAccess\", \"setAllowUniversalAccess\" ]}]}";
 	private ArrayList<SimpleEntry> stringArrayList;
 	protected PrintStream origSysOut;
+	private CluesDB cluesdb;
 	
 	public JavaSqueezer(){
 		this.sU = new SearchUtil();
 		this.codeRoot = TicklerVars.jClassDir;
+		try {
+			this.cluesdb = new CluesDB();
+		} catch (IOException e) {
+			OutBut.printWarning("Failed to load CLUES database");
+			e.printStackTrace();
+		}
 	}
 	
 	public void report(String codeRoot){
@@ -89,27 +98,28 @@ public class JavaSqueezer {
 		//Preparation: get Strings
 		this.getStringsInCode();
 		//Components
-		this.libsAndComponents();
-		this.frameworks();
-		this.soLibFiles();
-		this.dllFiles();
-		//Storage
-		this.storage();
-		this.externalStorageInCode();
-		//Communication
-		this.httpUrls();
-		this.findSchemes();
-		this.pinning();
-		//Crypto
-		this.weakCyphers();
-		this.crypto();
-		//Disclosure
-		this.commentsInCode();
-		this.credentialsInCode();
-		this.logInCode();
-		this.testDisclosure();
-//		this.getStringsInCode();
-//		this.squeezeJSon();
+// 		this.libsAndComponents();
+// 		this.frameworks();
+// 		this.soLibFiles();
+// 		this.dllFiles();
+// 		//Storage
+// 		this.storage();
+// 		this.externalStorageInCode();
+// 		//Communication
+// 		this.httpUrls();
+		this.uuids();
+// 		this.findSchemes();
+// 		this.pinning();
+// 		//Crypto
+// 		this.weakCyphers();
+// 		this.crypto();
+// 		//Disclosure
+// 		this.commentsInCode();
+// 		this.credentialsInCode();
+// 		this.logInCode();
+// 		this.testDisclosure();
+// //		this.getStringsInCode();
+// //		this.squeezeJSon();
 		
 		OutBut.printStep("Where [Java_Code_Dir] is "+this.codeRoot);
 		
@@ -297,8 +307,6 @@ public class JavaSqueezer {
 		this.getPathes();
 		OutBut.printH2("IP addresses in code");
 		this.getIPAddresses();
-		OutBut.printH2("UUIDs in code");
-		this.getUUID();
 	}
 	
 	public void getHttpUris(){
@@ -364,6 +372,11 @@ public class JavaSqueezer {
 		return url;
 	}
 
+	private void uuids() {
+		OutBut.printH2("UUIDs in code");
+		this.getUUID();
+	}
+
 	/*
 	* Searches for UUID128
 	* Focuses on Bluetooth related UUIDs
@@ -374,10 +387,9 @@ public class JavaSqueezer {
 		ArrayList<SimpleEntry> e = this.sU.searchForRegexInJava(regex,this.codeRoot);
 		ArrayList<SimpleEntry> results = this.removeDuplicatedSimpleEntries(e);
 		OutBut.printH3("UUID128 (String representation)");
-		this.printE_grouped(results);
+		this.printE_uuids(results);
 		// UUID key word
 		ArrayList<SimpleEntry> hits = new ArrayList<AbstractMap.SimpleEntry>();
-		ArrayList<String> files = new ArrayList<String>();
 		hits=this.sU.searchForKeyInJava("uuid",this.codeRoot);
 		if (!hits.isEmpty()){
 			OutBut.printH3("UUID key word");
@@ -485,6 +497,27 @@ public class JavaSqueezer {
 				lastFileName = fileName;
 			}
 			System.out.println(" "+e.getValue()+"\n ...");
+		}
+	}
+
+	private void printE_uuids(ArrayList<SimpleEntry> eArray) {
+		// Sort by key
+		eArray.sort(Comparator.comparing(e -> e.getKey().toString()));
+		String lastFileName = null;
+
+		for (SimpleEntry e: eArray){
+			String fileName=e.getKey().toString().replaceAll(this.codeRoot, "[Java_Code_Dir]");
+			if (!fileName.equals(lastFileName)) {
+				System.out.println("#FileName: "+fileName);
+				lastFileName = fileName;
+			}
+			System.out.println(" "+e.getValue());
+			if (this.cluesdb != null) {
+				CluesCustomUUID clue = this.cluesdb.lookupUUID(e.getValue().toString());
+				if (clue != null) 
+					clue.print();
+			}
+			System.out.println(" ...");
 		}
 	}
 	

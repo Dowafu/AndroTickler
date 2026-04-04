@@ -18,6 +18,7 @@ package initialization;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.IOException;
 import java.security.CodeSource;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
@@ -29,6 +30,7 @@ import base.FileUtil;
 import base.OtherUtil;
 import base.SearchUtil;
 import base.Tickler;
+import base.clues.CluesDB;
 import cliGui.OutBut;
 import commandExec.Commando;
 import device.Packagez;
@@ -78,7 +80,16 @@ public class TicklerChecks {
 		this.createEssentialDirs();	
 		this.checkExternalLibDir();
 		this.isDex2Jar();
-	
+
+
+		if (!CluesDB.checkCluesDb()) {
+			try {
+				CluesDB.downloadCluesDb();
+				OutBut.printStep("CLUES database downloaded successfully");
+			} catch (IOException | InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 	
 	
