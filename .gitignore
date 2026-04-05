@@ -3,3 +3,4 @@ build
 Tickler_workspace
 AndroTickler.jar
 base-dex2jar.jar
+bin

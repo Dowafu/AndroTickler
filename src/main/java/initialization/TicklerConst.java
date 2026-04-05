@@ -40,7 +40,7 @@ public class TicklerConst {
 	public static String DIFF_OLD_STORAGE = "Storage_old/";
 	public static String DATA_DIR_OLD=DIFF_OLD_STORAGE+DATA_DIR_NAME;
 	public static String EXT_DIR_OLD=DIFF_OLD_STORAGE+EXTERNAL_STORAGE_Dir;
-	public static String SQUEEZE_FILE_NAME= "squeeze.txt";
+	public static String SQUEEZE_FILE_NAME= "squeeze";
 	public static String APKTOOL_FILE_NAME="apktool.jar";
 	
 	//Tools names

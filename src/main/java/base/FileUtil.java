@@ -332,6 +332,18 @@ public class FileUtil {
 		}
 		
 	}
+
+	public void appendToFile(String fileName, String content){
+		try {
+			BufferedWriter writer = new  BufferedWriter(new FileWriter(fileName,true));
+			writer.append(content);
+			writer.close();
+		}
+		catch(IOException e) {
+			e.printStackTrace();
+		}
+	}
+
 	
 	/////// Preparation of Transfer directory
 	public String prepareTimestampTransfer(){

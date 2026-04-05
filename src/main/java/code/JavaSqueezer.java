@@ -32,12 +32,10 @@ import java.util.regex.Pattern;
 
 //import org.apache.commons.io.FileUtils;
 
-import actions.Searcher;
 import base.FileUtil;
 import base.JsonParser;
-import base.OtherUtil;
 import base.SearchUtil;
-import cliGui.OutBut;
+import base.OutWriter;
 import info.InfoGathering;
 import initialization.TicklerVars;
 
@@ -54,11 +52,23 @@ public class JavaSqueezer {
 	private String jsonSq="{ \"squeeze\": [{\"Title\":\"World accessible files\",\"Values\":[ \"MODE_WORLD_READABLE\", \"MODE_WORLD_WRITABLE\"]},"
 			+ "{\"Title\":\"WebView\",\"Values\":[ \"addJavascriptInterface\", \"setAllowContentAccess\", \"setAllowFileAccess\", \"setAllowUniversalAccess\" ]}]}";
 	private ArrayList<SimpleEntry> stringArrayList;
+	private boolean isHtml;
+	private OutWriter outwriter;
 	protected PrintStream origSysOut;
 	
 	public JavaSqueezer(){
 		this.sU = new SearchUtil();
 		this.codeRoot = TicklerVars.jClassDir;
+		this.isHtml = false;
+		this.outwriter = new OutWriter(this.isHtml);
+
+	}
+
+	public JavaSqueezer(boolean isHtml){
+		this.sU = new SearchUtil();
+		this.codeRoot = TicklerVars.jClassDir;
+		this.isHtml = isHtml;
+		this.outwriter = new OutWriter(this.isHtml);
 	}
 	
 	public void report(String codeRoot){
@@ -69,10 +79,9 @@ public class JavaSqueezer {
 				this.codeRoot = codeRootNotHome;
 				this.report();
 			}
-		
 			else
 			{
-				OutBut.printError("The code location you entered "+codeRoot+" does not exist");
+				this.outwriter.printError("The code location you entered "+codeRoot+" does not exist");
 			}
 		}
 		else {
@@ -83,7 +92,7 @@ public class JavaSqueezer {
 	}
 	public void report(){
 		//Redirect ot Squeeze out file
-		this.writeSqueezeInFile();
+		// this.writeSqueezeInFile();
 		
 		//Preparation: get Strings
 		this.getStringsInCode();
@@ -110,13 +119,14 @@ public class JavaSqueezer {
 //		this.getStringsInCode();
 //		this.squeezeJSon();
 		
-		OutBut.printStep("Where [Java_Code_Dir] is "+this.codeRoot);
+		this.outwriter.printStep("Where [Java_Code_Dir] is "+this.codeRoot);
+		this.outwriter.finalyzeHtml();
 		
 		//Back to SYS Out
-		this.backToSystemOut();
+		// this.backToSystemOut();
 		
 		//Print Squeeze file
-		this.printSqueezeFile();
+		// this.printSqueezeFile();
 	}
 	
 	
@@ -125,7 +135,7 @@ public class JavaSqueezer {
 	 * Search for any possible use of external storage
 	 */
 	public void externalStorageInCode(){
-		OutBut.printH2("Possible External Storage");
+		this.outwriter.printH2("Possible External Storage");
 		ArrayList<SimpleEntry> eArray = this.sU.searchForKeyInJava("getExternal",this.codeRoot);
 		
 		this.printE(eArray);
@@ -133,7 +143,7 @@ public class JavaSqueezer {
 	}
 	
 	private void storage(){
-		OutBut.printH2("Storage: DBs and shared preferences");
+		this.outwriter.printH2("Storage: DBs and shared preferences");
 		String[] keys = {"sharedpref", "SQLiteDatabase", "CacheDir","AndroidKeyStore", "KeyStore"};
 		ArrayList<SimpleEntry> eArray = this.returnFNameLineGroup(keys, false);
 		this.printE(eArray);
@@ -143,7 +153,7 @@ public class JavaSqueezer {
 	/////////////////////// Components //////////////////////////
 	
 	private void libsAndComponents(){
-		OutBut.printH2("Imports");
+		this.outwriter.printH2("Imports");
 		ArrayList<SimpleEntry> e = this.sU.searchForKeyInJava("import",this.codeRoot) ;
 		ArrayList<SimpleEntry> e1 = this.sU.refineSearch(e,"(^import.+)") ;
 		ArrayList<SimpleEntry> eResult = this.sU.refineSearch(e1, "^(?:(?!(import\\sjava|import\\sandroid)).)*$");
@@ -151,9 +161,9 @@ public class JavaSqueezer {
 		
 		
 		for (String s:files)
-			OutBut.printNormal(s);
+			this.outwriter.printNormal(s);
 		
-		OutBut.printH2("Components and libraries");
+		this.outwriter.printH2("Components and libraries");
 		String[] comps = {"Webview", "Okhttp", "Sqlcipher"};
 		ArrayList<SimpleEntry> hits = new ArrayList<>();
 		 files = new ArrayList<>();
@@ -161,12 +171,12 @@ public class JavaSqueezer {
 		for (String c:comps){
 			hits=this.sU.searchForKeyInJava(c,this.codeRoot);
 			if (!hits.isEmpty()){
-				OutBut.printH3(c);
+				this.outwriter.printH3(c);
 				files=this.returnFileNames(hits);
 			
 				for (String s:files)
-					OutBut.printNormal(s);
-				OutBut.printNormal("\n---------------------------------------------------------------");
+					this.outwriter.printNormal(s);
+				this.outwriter.printNormal("\n---------------------------------------------------------------");
 			}
 		}
 		
@@ -176,11 +186,11 @@ public class JavaSqueezer {
 //		String[] extenstions = {"so"};
 //		List<File> soLibs = this.sU.search4FileInDir(TicklerVars.extractedDir, extenstions);
 //		if (!soLibs.isEmpty()) {
-//			OutBut.printH2("Library files in the app");
+//			this.outwriter.printH2("Library files in the app");
 //			for (File f:soLibs ){
-//				OutBut.printNormal(f.getAbsolutePath().replaceAll(TicklerVars.extractedDir, "[Extracted_Apk]"));
+//				this.outwriter.printNormal(f.getAbsolutePath().replaceAll(TicklerVars.extractedDir, "[Extracted_Apk]"));
 //			}
-//			OutBut.printNormal("\nWhere [Extracted_Apk] is "+TicklerVars.extractedDir);
+//			this.outwriter.printNormal("\nWhere [Extracted_Apk] is "+TicklerVars.extractedDir);
 //		}
 //	}
 	
@@ -189,7 +199,7 @@ public class JavaSqueezer {
 	 */
 	public void soLibFiles(){
 		String[] extenstions = {".so"};
-		OutBut.printH2("Libraries in the APK");
+		this.outwriter.printH2("Libraries in the APK");
 		this.searchForFilesInAPK(extenstions);
 	}
 	
@@ -198,7 +208,7 @@ public class JavaSqueezer {
 	 */
 	public void dllFiles(){
 		String[] extenstions = {".dll"};
-		OutBut.printH2("DLLs in the APK");
+		this.outwriter.printH2("DLLs in the APK");
 		this.searchForFilesInAPK(extenstions);
 	}
 	
@@ -211,20 +221,20 @@ public class JavaSqueezer {
 	}
 	
 	private void frameworks() {
-		OutBut.printH2("Frameworks and Protocols");
+		this.outwriter.printH2("Frameworks and Protocols");
 		String[] keys = {"Cordova","PhoneGap", "Xamarin","Corona","Appsee","MQTT", "websocket"};
 		ArrayList<SimpleEntry> hits = new ArrayList<AbstractMap.SimpleEntry>();
 		ArrayList<String> files = new ArrayList<String>();
 		
 		for (String c:keys){
 			hits=this.sU.searchForKeyInJava(c,this.codeRoot);
-			OutBut.printH3(c);
+			this.outwriter.printH3(c);
 			if (!hits.isEmpty()){
 				files=this.returnFileNames(hits);
 			
 				for (String s:files)
-					OutBut.printNormal(s);
-				OutBut.printNormal("\n---------------------------------------------------------------");
+					this.outwriter.printNormal(s);
+				this.outwriter.printNormal("\n---------------------------------------------------------------");
 			}
 		}
 		
@@ -237,9 +247,9 @@ public class JavaSqueezer {
 	 * Search for weak hashes
 	 */
 	private void weakCyphers() {
-		System.out.println("\n");
+		this.outwriter.printNormal("\n");
 		String[] weakCrypto = {"Rot13", "MD4", "MD5", "RC2", "RC4", "SHA1"};
-		OutBut.printH2("Possible use of weak Ciphers/hashes");
+		this.outwriter.printH2("Possible use of weak Ciphers/hashes");
 		
 		ArrayList<SimpleEntry> eA = new ArrayList<>();
 		
@@ -253,7 +263,7 @@ public class JavaSqueezer {
 	 * Use of cryptography 
 	 */
 	private void crypto(){
-		OutBut.printH2("Crypto and hashing keywords");
+		this.outwriter.printH2("Crypto and hashing keywords");
 		String[] keys = {"aes", "crypt", "cipher", "sha1", "sha2","key" };
 		ArrayList<SimpleEntry> eA = this.returnFNameLineGroup(keys, false);
 		
@@ -267,8 +277,8 @@ public class JavaSqueezer {
 	 * Capture all strings in code and save the result to stringArrayList
 	 */
 	private void getStringsInCode(){
-		System.out.println("\n");
-//		OutBut.printH2("Strings");
+		this.outwriter.printNormal("\n");
+//		this.outwriter.printH2("Strings");
 		ArrayList<SimpleEntry> e = this.sU.searchForKeyInJava("\"",this.codeRoot);
 		ArrayList<SimpleEntry> eResult = this.sU.refineSearch(e, "[^:](\".+\")");
 		
@@ -278,8 +288,8 @@ public class JavaSqueezer {
 	}
 	
 	private void getHashes(){
-		System.out.println("\n");
-		OutBut.printH2("Strings");
+		this.outwriter.printNormal("\n");
+		this.outwriter.printH2("Strings");
 		ArrayList<SimpleEntry> e = this.sU.searchForKeyInJava("\"",this.codeRoot);
 
 		ArrayList<SimpleEntry> eResult = this.sU.refineSearch(e, "(\"\\w{32}\"|\"\\w{40}\"|\"\\w{56}\"|\"\\w{64}\")");
@@ -291,10 +301,10 @@ public class JavaSqueezer {
 	///////////////////////////////// Communication ///////////////////////////////////
 	
 	private void httpUrls(){
-		OutBut.printH2("URLs in code");
+		this.outwriter.printH2("URLs in code");
 		this.getHttpUris();
 		this.getPathes();
-		OutBut.printH2("IP addresses in code");
+		this.outwriter.printH2("IP addresses in code");
 		this.getIPAddresses();
 	}
 	
@@ -304,11 +314,11 @@ public class JavaSqueezer {
 
 		this.printE(eResult);
 		
-/*		OutBut.printH3("HTTP URL summary:");
+/*		this.outwriter.printH3("HTTP URL summary:");
 		ArrayList<String> uris = new ArrayList<>();
 		for (SimpleEntry e: hits){
 			uris.add(this.correctUrl((String)e.getValue()));
-//			OutBut.printNormal(this.correctUrl((String)e.getValue()));
+//			this.outwriter.printNormal(this.correctUrl((String)e.getValue()));
 		}
 		
 		OtherUtil.printStringArray(OtherUtil.removeDuplicates(uris));
@@ -323,7 +333,7 @@ public class JavaSqueezer {
 		ArrayList<SimpleEntry> hits = this.sU.refineSearch(this.stringArrayList, "@\\w+\\(\\\"(.*\\/.*)+\\\"\\)");
 		if (!hits.isEmpty())
 		{
-			OutBut.printH3("Possible paths:");
+			this.outwriter.printH3("Possible paths:");
 			this.printE(hits);
 		}
 	}
@@ -340,13 +350,13 @@ public class JavaSqueezer {
 	}
 	
 	private void findSchemes() {
-		OutBut.printH2("Schemes and other URIs");
+		this.outwriter.printH2("Schemes and other URIs");
 		ArrayList<SimpleEntry> hits = this.sU.searchForKeyInJava("://",this.codeRoot); 
 		this.printE(hits);
 	}
 	
 	private void pinning(){
-		OutBut.printH2("Pinning");
+		this.outwriter.printH2("Pinning");
 		ArrayList<SimpleEntry> hits = this.sU.searchForKeyInJava("certificatePinner",this.codeRoot);
 		this.printE(hits);
 	}
@@ -369,7 +379,7 @@ public class JavaSqueezer {
 	* Search For all logcat commands In Code
 	*/
 	public void logInCode(){
-		OutBut.printH2("Logging messages in logcat");
+		this.outwriter.printH2("Logging messages in logcat");
 		ArrayList<SimpleEntry> e = this.sU.searchForKeyInJava("Log",this.codeRoot) ;
 		ArrayList<SimpleEntry> eResult = this.sU.refineSearch(e, ".*Log\\.\\w\\((\\+?)");
 		eResult.addAll(this.sU.refineSearch(e, ".*getLogger\\(\\)\\.(\\w)"));
@@ -379,7 +389,7 @@ public class JavaSqueezer {
 	}
 	
 	private void testDisclosure(){
-		OutBut.printH2("Test");
+		this.outwriter.printH2("Test");
 		ArrayList<SimpleEntry> hits = this.sU.searchForKeyInJava("test",this.codeRoot);
 		hits = this.sU.refineSearch(hits, "(.*(test|TEST).*)");
 		this.printE(hits);
@@ -391,8 +401,8 @@ public class JavaSqueezer {
 	 *  Regex for comment: // not proceeded by a : (not a URI), proceeded by any space then no digit (eliminate undecompiled code) 
 	 */
 	public void commentsInCode(){
-		System.out.println("\n");
-		OutBut.printH2("Comments");
+		this.outwriter.printNormal("\n");
+		this.outwriter.printH2("Comments");
 		
 		ArrayList<SimpleEntry> eComments = new ArrayList<>();
 		ArrayList<SimpleEntry> e = this.sU.searchForKeyInJava("//",this.codeRoot);
@@ -420,8 +430,8 @@ public class JavaSqueezer {
 	 * pass, password, username, userID, credentials
 	 */
 	public void credentialsInCode(){
-		System.out.println("\n");
-		OutBut.printH2("Possible credentials disclosure");
+		this.outwriter.printNormal("\n");
+		this.outwriter.printH2("Possible credentials disclosure");
 		
 		String[] keys = {"pass","password", "pwd", "username", "user name", "userID", "credential", "admin"};
 		ArrayList<SimpleEntry> eA = this.returnFNameLineGroup(keys, false);
@@ -438,8 +448,8 @@ public class JavaSqueezer {
 	private void printE(ArrayList<SimpleEntry> eArray){
 		for (SimpleEntry e: eArray){
 			String fileName=e.getKey().toString().replaceAll(this.codeRoot, "[Java_Code_Dir]");
-			System.out.println("#FileName: "+fileName);
-			System.out.println(" "+e.getValue()+"\n");
+			this.outwriter.printNormal("#FileName: "+fileName);
+			this.outwriter.printCode(" "+e.getValue()+"\n");
 		}
 	}
 	
@@ -484,7 +494,7 @@ public class JavaSqueezer {
 		for (String s: keys){
 			keyRes = this.sU.searchForKeyInJava(s,this.codeRoot);
 			if (printName && (!keyRes.isEmpty()))
-				OutBut.printH3(s);
+				this.outwriter.printH3(s);
 			
 			eA.addAll(this.sU.searchForKeyInJava(s,this.codeRoot));
 		}
@@ -500,9 +510,9 @@ public class JavaSqueezer {
 		List<File> files = this.sU.search4FileInDir(TicklerVars.extractedDir, extension);
 		if (!files.isEmpty()) {
 			for (File f:files ){
-				OutBut.printNormal(f.getAbsolutePath().replaceAll(TicklerVars.extractedDir, "[Extracted_Apk]"));
+				this.outwriter.printNormal(f.getAbsolutePath().replaceAll(TicklerVars.extractedDir, "[Extracted_Apk]"));
 			}
-			OutBut.printNormal("\nWhere [Extracted_Apk] is "+TicklerVars.extractedDir);
+			this.outwriter.printNormal("\nWhere [Extracted_Apk] is "+TicklerVars.extractedDir);
 		}
 	}
 
@@ -538,7 +548,7 @@ public class JavaSqueezer {
 		
 		for (SimpleEntry<String,ArrayList<String>> e : arr) {
 			
-			OutBut.printH2(e.getKey());
+			this.outwriter.printH2(e.getKey());
 			Object[] aL = e.getValue().toArray();
 			searchKeys= Arrays.copyOf(aL, aL.length, String[].class);;
 			
@@ -555,16 +565,16 @@ public class JavaSqueezer {
 			
 		//Print Summary
 		
-		OutBut.printH2("Results Summary");
+		this.outwriter.printH2("Results Summary");
 		for (SimpleEntry<String, Integer> e : summaryArray) {
-			OutBut.printNormal(e.getKey()+":\t"+e.getValue());
+			this.outwriter.printNormal(e.getKey()+":\t"+e.getValue());
 		}
 				
 		
 		
 		
 //		catch(IOException e) {
-//			OutBut.printError("JSON File "+filePath+" does not exist");
+//			this.outwriter.printError("JSON File "+filePath+" does not exist");
 //		}
 		
 	}
@@ -582,11 +592,11 @@ public class JavaSqueezer {
 	private void writeSqueezeInFile() {
 		try {
 			this.origSysOut = System.out;
-			FileUtil fU = new FileUtil();
-//			fU.writeFile(TicklerVars.squeezeFile, "Tickler Squeeze");
-			PrintStream fileOut = new PrintStream(TicklerVars.squeezeFile);
-			OutBut.printH1("Code Squeeze");
-			OutBut.printH2("Output is also saved at "+ TicklerVars.squeezeFile);
+			// FileUtil fU = new FileUtil();
+			// fU.writeFile(TicklerVars.squeezeFile, "Tickler Squeeze");
+			this.outwriter.printH1("Code Squeeze");
+			this.outwriter.printNormal("Output is also saved at "+ TicklerVars.squeezeFile+".txt");
+			PrintStream fileOut = new PrintStream(TicklerVars.squeezeFile+".txt");
 			System.setOut(fileOut);
 		}
 		catch(FileNotFoundException e) {
@@ -597,11 +607,11 @@ public class JavaSqueezer {
 	private void printSqueezeFile() {
 		FileUtil fU = new FileUtil();
 		try {
-			String squeezeOutput = fU.readFile(TicklerVars.squeezeFile);
-			OutBut.printNormal(squeezeOutput);
+			String squeezeOutput = fU.readFile(TicklerVars.squeezeFile+".txt");
+			this.outwriter.printNormal(squeezeOutput);
 			}
 		catch (IOException e) {
-			OutBut.printError("Problem reading squeeze output file: "+TicklerVars.squeezeFile);
+			this.outwriter.printError("Problem reading squeeze output file: "+TicklerVars.squeezeFile+".txt");
 		}
 	}
 	
